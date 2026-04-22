@@ -15,6 +15,13 @@ class OrderStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+ORDER_STATUS_ENUM = Enum(
+    OrderStatus,
+    name="order_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+)
+
+
 class Order(TimestampMixin, Base):
     __tablename__ = "orders"
 
@@ -22,7 +29,7 @@ class Order(TimestampMixin, Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
     status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus, name="order_status"),
+        ORDER_STATUS_ENUM,
         default=OrderStatus.PENDING_PAYMENT,
         nullable=False,
     )
@@ -36,4 +43,3 @@ class Order(TimestampMixin, Base):
     user = relationship("User", back_populates="orders")
     product = relationship("Product", back_populates="orders")
     payment = relationship("Payment", back_populates="order", uselist=False, cascade="all, delete-orphan")
-

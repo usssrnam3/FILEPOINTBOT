@@ -14,6 +14,13 @@ class PaymentStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
+PAYMENT_STATUS_ENUM = Enum(
+    PaymentStatus,
+    name="payment_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+)
+
+
 class Payment(TimestampMixin, Base):
     __tablename__ = "payments"
 
@@ -22,7 +29,7 @@ class Payment(TimestampMixin, Base):
     provider: Mapped[str] = mapped_column(String(50), nullable=False)
     provider_payment_id: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, name="payment_status"),
+        PAYMENT_STATUS_ENUM,
         default=PaymentStatus.PENDING,
         nullable=False,
     )
@@ -32,4 +39,3 @@ class Payment(TimestampMixin, Base):
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
     order = relationship("Order", back_populates="payment")
-

@@ -11,13 +11,20 @@ class ProductType(str, enum.Enum):
     SERVICE = "service"
 
 
+PRODUCT_TYPE_ENUM = Enum(
+    ProductType,
+    name="product_type",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+)
+
+
 class Product(TimestampMixin, Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    type: Mapped[ProductType] = mapped_column(Enum(ProductType, name="product_type"), nullable=False)
+    type: Mapped[ProductType] = mapped_column(PRODUCT_TYPE_ENUM, nullable=False)
     price_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="RUB", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -40,4 +47,3 @@ class ProductFile(TimestampMixin, Base):
     file_size: Mapped[int | None] = mapped_column(BigInteger)
 
     product = relationship("Product", back_populates="file")
-

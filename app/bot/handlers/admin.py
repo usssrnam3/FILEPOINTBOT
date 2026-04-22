@@ -124,7 +124,10 @@ async def product_price(message: Message, state: FSMContext, container: AppConta
     await state.update_data(price_amount=price_amount)
     if product_type == ProductType.DIGITAL:
         await state.set_state(CreateProductState.waiting_for_file)
-        await message.answer("Отправьте файл одним Telegram-документом.")
+        await message.answer(
+            "Отправьте файл. Можно как Telegram-документ или как фото. "
+            "Если отправляете картинку, лучше выбрать отправку как файл, чтобы не было сжатия."
+        )
         return
 
     async with container.session_factory() as session:
@@ -153,11 +156,32 @@ async def product_file(message: Message, state: FSMContext, bot: Bot, container:
     if message.from_user is None or not is_admin(container, message.from_user.id):
         await message.answer("Доступ запрещен.")
         return
-    if message.document is None:
-        await message.answer("Нужно отправить именно документ, а не фото или текст.")
+    stored_file = None
+    if message.document is not None:
+        stored_file = await container.storage.save_document(bot, message.document)
+    elif message.photo:
+        stored_file = await container.storage.save_photo(bot, message.photo[-1])
+    else:
+        content_types = []
+        if message.text:
+            content_types.append("text")
+        if message.sticker:
+            content_types.append("sticker")
+        if message.video:
+            content_types.append("video")
+        if message.audio:
+            content_types.append("audio")
+        if message.voice:
+            content_types.append("voice")
+        if message.animation:
+            content_types.append("animation")
+        detected = ", ".join(content_types) if content_types else "unknown"
+        await message.answer(
+            "Не удалось распознать файл. Отправьте документ через скрепку -> Файл, "
+            f"или обычное фото. Telegram прислал тип: {detected}."
+        )
         return
     data = await state.get_data()
-    stored_file = await container.storage.save_document(bot, message.document)
     async with container.session_factory() as session:
         product = await admin_service.create_product(
             session,
